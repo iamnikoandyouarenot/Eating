@@ -324,6 +324,13 @@ body::before {
 .bigwin-meal-cat { font-size: 12px; letter-spacing: 3px; color: var(--gold); font-family: 'Noto Serif TC', serif; font-weight: 700; }
 .bigwin-meal-dish { font-size: 15px; color: var(--cream); font-weight: 700; }
 .bigwin-meal-price { font-size: 13px; color: var(--gold-bright); font-family: 'Share Tech Mono', monospace; margin-left: 6px; }
+.bigwin-subline {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 2px 16px; margin-top: 6px;
+  font-size: 13px; color: rgba(247,233,208,0.6);
+  font-family: 'Noto Sans TC', sans-serif;
+}
+.bigwin-subline span:last-child { font-family: 'Share Tech Mono', monospace; color: var(--gold-bright); }
 .bigwin-total {
   display: flex; align-items: center; justify-content: space-between;
   margin-top: 6px; padding: 12px 16px;
@@ -837,19 +844,24 @@ function onAllDone(results) {
 
   const display = document.getElementById('resultDisplay');
   display.className = 'result-display win reveal';
-  const total = results.reduce((sum, r) => sum + r.price, 0);
-  display.innerHTML = results.map((r,i) => `${r.emoji} ${r.text} <span style="color:var(--gold-bright);font-family:'Share Tech Mono',monospace">$${r.price}</span>`).join('　＋　') + `　＝　<span style="color:var(--neon-red);font-family:'Share Tech Mono',monospace;font-size:15px">$${total}</span>`;
+  const subtotal = results.reduce((sum, r) => sum + r.price, 0);
+  const grandTotal = subtotal + Math.round(subtotal * 0.1);
+  display.innerHTML = results.map((r,i) => `${r.emoji} ${r.text} <span style="color:var(--gold-bright);font-family:'Share Tech Mono',monospace">$${r.price}</span>`).join('　＋　') + `　＝　<span style="color:var(--neon-red);font-family:'Share Tech Mono',monospace;font-size:15px">$${grandTotal}</span><span style="color:rgba(247,233,208,0.45);font-size:11px">（含服務費）</span>`;
 
   setTimeout(() => showBigWin(results), 550);
 }
 
 function showBigWin(results) {
-  const total = results.reduce((sum, r) => sum + r.price, 0);
+  const subtotal = results.reduce((sum, r) => sum + r.price, 0);
+  const service = Math.round(subtotal * 0.1);   // 10% 服務費（四捨五入）
+  const grandTotal = subtotal + service;
   const mealEl = document.getElementById('bigwinMeal');
   mealEl.innerHTML = results.map((r,i) =>
     `<div class="bigwin-meal-item"><span class="bigwin-meal-cat">${CAT_LABELS[i]}</span><span class="bigwin-meal-dish">${r.emoji} ${r.text} <span class="bigwin-meal-price">$${r.price}</span></span></div>`
   ).join('') +
-    `<div class="bigwin-total"><span class="bigwin-total-label">今日套餐總價</span><span class="bigwin-total-value">$${total}</span></div>`;
+    `<div class="bigwin-subline"><span>餐點小計</span><span>$${subtotal}</span></div>` +
+    `<div class="bigwin-subline"><span>服務費 10%</span><span>$${service}</span></div>` +
+    `<div class="bigwin-total"><span class="bigwin-total-label">應付總額</span><span class="bigwin-total-value">$${grandTotal}</span></div>`;
   document.getElementById('bigwin').classList.add('show');
   sndJackpot();   // 中獎音效
   spawnCoins();
