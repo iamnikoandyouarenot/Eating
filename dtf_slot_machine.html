@@ -56,6 +56,19 @@ body::before {
 @keyframes bulbChase { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
 
 .wrapper { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; padding: 24px 12px; }
+.sound-toggle {
+  position: fixed; top: 16px; right: 16px; z-index: 50;
+  width: 44px; height: 44px; border-radius: 50%;
+  background: linear-gradient(160deg, #2a1c14, #1a1009);
+  border: 2px solid var(--gold-deep);
+  font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 0 14px rgba(232,192,87,0.3), inset 0 1px 2px rgba(255,255,255,0.1);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.sound-toggle:hover { transform: scale(1.08); box-shadow: 0 0 22px rgba(232,192,87,0.5); }
+.sound-toggle:active { transform: scale(0.94); }
+.sound-toggle.muted { opacity: 0.55; border-color: rgba(232,192,87,0.3); }
 
 /* ============ TITLE ============ */
 .title-block { text-align: center; margin-bottom: 18px; position: relative; }
@@ -184,8 +197,9 @@ body::before {
 .reel-wrap::after  { bottom: 0; background: linear-gradient(to top, var(--reel-bg) 0%, rgba(26,20,16,0.4) 60%, transparent 100%); }
 .reel-strip { position: absolute; top: 0; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; will-change: transform; }
 .reel-item { width: 100%; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 6px; flex-shrink: 0; }
-.reel-emoji { font-size: 26px; line-height: 1; margin-bottom: 3px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
-.reel-text { font-size: 11px; color: var(--cream); text-align: center; font-weight: 700; line-height: 1.25; font-family: 'Noto Sans TC', sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+.reel-emoji { font-size: 23px; line-height: 1; margin-bottom: 2px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+.reel-text { font-size: 10.5px; color: var(--cream); text-align: center; font-weight: 700; line-height: 1.2; font-family: 'Noto Sans TC', sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+.reel-price { font-size: 9.5px; color: var(--gold-bright); text-align: center; font-family: 'Share Tech Mono', monospace; margin-top: 2px; text-shadow: 0 0 6px rgba(232,192,87,0.4); }
 
 /* Center win line — payline (overlays the reels row, which is 216px tall) */
 .payline {
@@ -309,6 +323,16 @@ body::before {
 }
 .bigwin-meal-cat { font-size: 12px; letter-spacing: 3px; color: var(--gold); font-family: 'Noto Serif TC', serif; font-weight: 700; }
 .bigwin-meal-dish { font-size: 15px; color: var(--cream); font-weight: 700; }
+.bigwin-meal-price { font-size: 13px; color: var(--gold-bright); font-family: 'Share Tech Mono', monospace; margin-left: 6px; }
+.bigwin-total {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 6px; padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(192,39,45,0.25), rgba(139,26,26,0.25));
+  border: 1px solid var(--neon-red); border-radius: 10px;
+  box-shadow: 0 0 16px rgba(255,59,78,0.25);
+}
+.bigwin-total-label { font-size: 13px; letter-spacing: 3px; color: var(--cream); font-family: 'Noto Serif TC', serif; font-weight: 700; }
+.bigwin-total-value { font-size: 24px; color: var(--neon-red); font-family: 'Share Tech Mono', monospace; text-shadow: 0 0 12px var(--neon-red); letter-spacing: 1px; }
 .bigwin-close {
   margin-top: 24px; font-family: 'Noto Serif TC', serif; font-weight: 700;
   font-size: 14px; letter-spacing: 4px; color: var(--red-deep);
@@ -330,6 +354,8 @@ body::before {
 <body>
 
 <div class="light-strand" id="lightStrand"></div>
+
+<button class="sound-toggle" id="soundToggle" onclick="toggleSound()" title="音效開關">🔊</button>
 
 <div class="bigwin-overlay" id="bigwin">
   <div class="bigwin-box">
@@ -366,7 +392,7 @@ body::before {
       <div class="category-labels">
         <div class="cat-label">主 食</div>
         <div class="cat-label">青 菜</div>
-        <div class="cat-label">小 菜</div>
+        <div class="cat-label">小菜/湯</div>
         <div class="cat-label">甜 點</div>
       </div>
 
@@ -402,90 +428,253 @@ body::before {
 </div>
 
 <script>
+// ===== 音效引擎（Web Audio API 合成，零外部檔案）=====
+let audioCtx = null;
+let soundOn = true;       // 音效開關
+let reelLoopTimer = null; // 滾輪滴答聲計時器
+let masterGain = null;    // 主音量總線
+
+function initAudio() {
+  if (!audioCtx) {
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.9;            // 整體音量（拉高）
+    // 加一點壓縮讓聲音更飽滿有力
+    const comp = audioCtx.createDynamicsCompressor();
+    comp.threshold.value = -18;
+    comp.ratio.value = 6;
+    masterGain.connect(comp).connect(audioCtx.destination);
+  }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+}
+
+function out() { return masterGain || audioCtx.destination; }
+
+// 基本音：振盪器 + 音量包絡
+function blip(freq, startTime, dur, type = 'square', vol = 0.15) {
+  if (!soundOn || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = type;
+  osc.frequency.setValueAtTime(freq, startTime);
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(vol, startTime + 0.005);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
+  osc.connect(gain).connect(out());
+  osc.start(startTime);
+  osc.stop(startTime + dur + 0.02);
+}
+
+// 重低音鼓「咚」（賭場機台的厚重感）
+function bassThump(startTime, freq = 90, dur = 0.22, vol = 0.55) {
+  if (!soundOn || !audioCtx) return;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(freq * 2, startTime);
+  osc.frequency.exponentialRampToValueAtTime(freq, startTime + 0.08);
+  gain.gain.setValueAtTime(vol, startTime);
+  gain.gain.exponentialRampToValueAtTime(0.0001, startTime + dur);
+  osc.connect(gain).connect(out());
+  osc.start(startTime); osc.stop(startTime + dur + 0.02);
+}
+
+// 噪音爆（用於喀嗒/金屬停格感）
+function noiseClick(startTime, dur = 0.04, vol = 0.18, hp = 1200) {
+  if (!soundOn || !audioCtx) return;
+  const bufSize = Math.floor(audioCtx.sampleRate * dur);
+  const buffer = audioCtx.createBuffer(1, bufSize, audioCtx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufSize; i++) {
+    data[i] = (Math.random() * 2 - 1) * (1 - i / bufSize); // 衰減白噪音
+  }
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  const filter = audioCtx.createBiquadFilter();
+  filter.type = 'highpass';
+  filter.frequency.value = hp;
+  const gain = audioCtx.createGain();
+  gain.gain.value = vol;
+  src.connect(filter).connect(gain).connect(out());
+  src.start(startTime);
+}
+
+// 1) 拉霸啟動聲：機械下沉 + 重低音「咚」
+function sndLeverPull() {
+  if (!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const osc = audioCtx.createOscillator();
+  const gain = audioCtx.createGain();
+  osc.type = 'sawtooth';
+  osc.frequency.setValueAtTime(520, t);
+  osc.frequency.exponentialRampToValueAtTime(120, t + 0.2);
+  gain.gain.setValueAtTime(0.32, t);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+  osc.connect(gain).connect(out());
+  osc.start(t); osc.stop(t + 0.28);
+  bassThump(t, 100, 0.3, 0.6);            // 厚重啟動鼓
+  noiseClick(t, 0.06, 0.2, 700);
+}
+
+// 2) 滾輪滴答聲：轉動期間連續播放（更密集、更響）
+function startReelLoop() {
+  if (!soundOn || !audioCtx) return;
+  stopReelLoop();
+  let interval = 38;                       // 初始更快更密
+  let beat = 0;
+  function tick() {
+    const now = audioCtx.currentTime;
+    noiseClick(now, 0.022, 0.12, 2200);    // 滾輪喀嗒（更響）
+    blip(1000 + Math.random() * 300, now, 0.018, 'square', 0.07);
+    if (beat % 4 === 0) bassThump(now, 70, 0.1, 0.18); // 每四下一個低音脈動
+    beat++;
+    interval = Math.min(interval * 1.045, 130); // 逐漸放慢
+    reelLoopTimer = setTimeout(tick, interval);
+  }
+  tick();
+}
+function stopReelLoop() {
+  if (reelLoopTimer) { clearTimeout(reelLoopTimer); reelLoopTimer = null; }
+}
+
+// 3) 轉盤逐格停止：厚重「叩」聲（低音鼓 + 金屬）
+function sndReelStop(index) {
+  if (!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  const base = [294, 349, 392, 466][index] || 392; // 四格音高遞升
+  bassThump(t, 80 + index * 8, 0.18, 0.5);          // 厚重落定鼓
+  blip(base, t, 0.16, 'triangle', 0.3);
+  blip(base * 2, t, 0.08, 'sine', 0.12);
+  noiseClick(t, 0.06, 0.28, 500);
+}
+
+// 4) 中獎 JACKPOT：澎湃勝利音階 + 鼓點 + 金幣叮噹 + 鑼
+function sndJackpot() {
+  if (!soundOn || !audioCtx) return;
+  const t = audioCtx.currentTime;
+  // 開場重擊
+  bassThump(t, 110, 0.35, 0.7);
+  // 勝利音階（上行，雙層厚音）
+  const scale = [523, 587, 659, 784, 880, 1047, 1175];
+  scale.forEach((f, i) => {
+    const dt = t + i * 0.085;
+    blip(f, dt, 0.22, 'square', 0.24);
+    blip(f * 2, dt, 0.14, 'sine', 0.1);
+    blip(f / 2, dt, 0.22, 'triangle', 0.12);
+    if (i % 2 === 0) bassThump(dt, 90, 0.12, 0.3); // 節奏鼓點
+  });
+  // 金幣叮噹灑落（更多、更密）
+  for (let i = 0; i < 32; i++) {
+    const dt = t + 0.5 + Math.random() * 1.6;
+    const f = 1500 + Math.random() * 1800;
+    blip(f, dt, 0.14, 'sine', 0.12);
+    blip(f * 1.5, dt, 0.08, 'triangle', 0.05);
+  }
+  // 收尾鑼聲（厚實雙層）
+  blip(196, t + 0.65, 0.7, 'sawtooth', 0.18);
+  blip(98, t + 0.65, 0.8, 'sine', 0.25);
+  bassThump(t + 0.65, 70, 0.6, 0.5);
+}
+
+// 音效開關
+function toggleSound() {
+  soundOn = !soundOn;
+  const btn = document.getElementById('soundToggle');
+  if (soundOn) {
+    initAudio();
+    btn.textContent = '🔊';
+    btn.classList.remove('muted');
+  } else {
+    stopReelLoop();
+    btn.textContent = '🔇';
+    btn.classList.add('muted');
+  }
+}
+
+
 const REELS = [
-  // 主食：小籠包 / 餃類燒賣 / 湯麵 / 炒飯
+  // 主食：小籠包 / 餃類燒賣 / 湯麵 / 炒飯（價格為一籠/整份）
   { items: [
-    { emoji:'🥟', text:'小籠包' },
-    { emoji:'🦀', text:'蟹粉小籠包' },
-    { emoji:'🐓', text:'雞肉小籠包' },
-    { emoji:'🥒', text:'絲瓜蝦仁小籠包' },
-    { emoji:'🍄', text:'松露小籠包' },
-    { emoji:'🥬', text:'蔬食小籠包' },
-    { emoji:'🥟', text:'蝦肉煎餃' },
-    { emoji:'🥬', text:'菜肉蒸餃' },
-    { emoji:'🦐', text:'蝦肉蒸餃' },
-    { emoji:'🐟', text:'鮮魚蒸餃' },
-    { emoji:'🍄', text:'香菇素餃' },
-    { emoji:'🐠', text:'龍膽石斑蒸餃' },
-    { emoji:'🦐', text:'蝦仁燒賣' },
-    { emoji:'🍚', text:'糯肉燒賣' },
-    { emoji:'🍜', text:'紅燒牛肉麵' },
-    { emoji:'🍲', text:'元盅雞麵' },
-    { emoji:'🐄', text:'元盅牛肉麵' },
-    { emoji:'🥬', text:'雪菜肉絲湯麵' },
-    { emoji:'🦐', text:'蝦肉餛飩麵' },
-    { emoji:'🥟', text:'菜肉餛飩麵' },
-    { emoji:'🦐', text:'蝦仁麵' },
-    { emoji:'🍖', text:'排骨麵' },
-    { emoji:'🍤', text:'蝦仁蛋炒飯' },
-    { emoji:'🍛', text:'肉絲蛋炒飯' },
-    { emoji:'🍚', text:'蝦仁肉絲蛋炒飯' },
-    { emoji:'🍖', text:'排骨蛋炒飯' },
-    { emoji:'🥗', text:'什蔬蛋炒飯' },
+    { emoji:'🥟', text:'小籠包', price:290 },
+    { emoji:'🦀', text:'蟹粉小籠包', price:430 },
+    { emoji:'🐓', text:'雞肉小籠包', price:270 },
+    { emoji:'🥒', text:'絲瓜蝦仁小籠包', price:380 },
+    { emoji:'🍄', text:'松露小籠包', price:500 },
+    { emoji:'🥬', text:'蔬食小籠包', price:310 },
+    { emoji:'🥟', text:'蝦肉煎餃', price:250 },
+    { emoji:'🥬', text:'菜肉蒸餃', price:290 },
+    { emoji:'🦐', text:'蝦肉蒸餃', price:320 },
+    { emoji:'🐟', text:'鮮魚蒸餃', price:300 },
+    { emoji:'🍄', text:'香菇素餃', price:300 },
+    { emoji:'🐠', text:'龍膽石斑蒸餃', price:340 },
+    { emoji:'🦐', text:'蝦仁燒賣', price:400 },
+    { emoji:'🍚', text:'糯肉燒賣', price:280 },
+    { emoji:'🍜', text:'紅燒牛肉麵', price:300 },
+    { emoji:'🍲', text:'元盅雞湯麵', price:300 },
+    { emoji:'🐄', text:'元盅牛肉麵', price:290 },
+    { emoji:'🥬', text:'雪菜肉絲湯麵', price:190 },
+    { emoji:'🦐', text:'蝦肉餛飩麵', price:230 },
+    { emoji:'🥟', text:'菜肉餛飩麵', price:200 },
+    { emoji:'🦐', text:'蝦仁麵', price:290 },
+    { emoji:'🍖', text:'排骨麵', price:260 },
+    { emoji:'🍤', text:'蝦仁蛋炒飯', price:320 },
+    { emoji:'🍛', text:'肉絲蛋炒飯', price:250 },
+    { emoji:'🍚', text:'蝦仁肉絲蛋炒飯', price:360 },
+    { emoji:'🍖', text:'排骨蛋炒飯', price:310 },
+    { emoji:'🥗', text:'什蔬蛋炒飯', price:250 },
   ]},
   // 青菜：盤菜
   { items: [
-    { emoji:'🥬', text:'高麗菜' },
-    { emoji:'🦐', text:'清炒蝦仁' },
-    { emoji:'🌿', text:'空心菜' },
-    { emoji:'🍠', text:'地瓜葉' },
-    { emoji:'🥬', text:'莧菜' },
-    { emoji:'🥬', text:'莧菜腐竹' },
-    { emoji:'🌱', text:'菠菜' },
-    { emoji:'🌱', text:'菠菜腐竹' },
-    { emoji:'🫛', text:'豆苗' },
-    { emoji:'🦐', text:'豆苗蝦仁' },
-    { emoji:'🥬', text:'A菜' },
-    { emoji:'🌿', text:'山蘇' },
+    { emoji:'🥬', text:'高麗菜', price:250 },
+    { emoji:'🦐', text:'清炒蝦仁', price:520 },
+    { emoji:'🌿', text:'空心菜', price:250 },
+    { emoji:'🍠', text:'地瓜葉', price:250 },
+    { emoji:'🥬', text:'莧菜', price:250 },
+    { emoji:'🥬', text:'莧菜腐竹', price:330 },
+    { emoji:'🌱', text:'菠菜', price:250 },
+    { emoji:'🌱', text:'菠菜腐竹', price:330 },
+    { emoji:'🫛', text:'豆苗', price:440 },
+    { emoji:'🦐', text:'豆苗蝦仁', price:650 },
+    { emoji:'🥬', text:'A菜', price:250 },
+    { emoji:'🌿', text:'山蘇', price:390 },
   ]},
-  // 小菜：開胃菜
+  // 小菜 + 湯品（開胃菜冷盤 + 湯）
   { items: [
-    { emoji:'🫛', text:'乾煸四季豆' },
-    { emoji:'🍄', text:'涼拌雲耳' },
-    { emoji:'🥗', text:'小菜' },
-    { emoji:'🍢', text:'烤麩' },
-    { emoji:'🥒', text:'辣味黃瓜' },
-    { emoji:'🥬', text:'寧式黃芽菜' },
-    { emoji:'🍗', text:'紹興醉雞' },
-    { emoji:'🍖', text:'炸排骨' },
-    { emoji:'🍆', text:'紅燒茄子' },
-    { emoji:'🌶️', text:'香辣牛肚' },
-    { emoji:'🍖', text:'糖醋排骨' },
-    { emoji:'🥬', text:'泡菜' },
-    { emoji:'🎋', text:'冷筍沙拉' },
-    { emoji:'🦐', text:'香酥蝦餅' },
-    { emoji:'🐄', text:'滷牛腱' },
+    { emoji:'🫛', text:'乾煸四季豆', price:200 },
+    { emoji:'🍄', text:'涼拌雲耳', price:130 },
+    { emoji:'🥗', text:'小菜', price:130 },
+    { emoji:'🍢', text:'烤麩', price:130 },
+    { emoji:'🥒', text:'辣味黃瓜', price:130 },
+    { emoji:'🥬', text:'寧式黃芽菜', price:130 },
+    { emoji:'🍗', text:'紹興醉雞', price:380 },
+    { emoji:'🍖', text:'炸排骨', price:160 },
+    { emoji:'🍆', text:'紅燒茄子', price:150 },
+    { emoji:'🌶️', text:'香辣牛肚', price:200 },
+    { emoji:'🍖', text:'糖醋排骨', price:280 },
+    { emoji:'🥬', text:'泡菜', price:120 },
+    { emoji:'🦐', text:'香酥蝦餅', price:290 },
+    { emoji:'🐄', text:'滷牛腱', price:240 },
+    { emoji:'🍲', text:'元盅雞湯', price:250 },
+    { emoji:'🥩', text:'紅燒牛肉湯', price:270 },
+    { emoji:'🍜', text:'酸辣湯', price:120 },
+    { emoji:'🍅', text:'蕃茄豆腐蛋花湯', price:200 },
+    { emoji:'🍄', text:'松露鮮菇盅', price:240 },
+    { emoji:'🥒', text:'苦瓜排骨湯', price:230 },
   ]},
-  // 甜點 + 湯品（甜湯）
+  // 甜點（只放真正的甜點）
   { items: [
-    { emoji:'🍫', text:'巧克力小籠包' },
-    { emoji:'🍠', text:'芋泥小籠包' },
-    { emoji:'🫘', text:'豆沙小籠包' },
-    { emoji:'🍰', text:'核桃鬆糕' },
-    { emoji:'🍰', text:'赤豆鬆糕' },
-    { emoji:'🍮', text:'千層油糕' },
-    { emoji:'🍡', text:'糖水芝麻湯圓' },
-    { emoji:'🍶', text:'酒釀芝麻湯圓' },
-    { emoji:'🍧', text:'銀耳四寶甜湯' },
-    { emoji:'🍲', text:'元盅雞湯' },
-    { emoji:'🥩', text:'紅燒牛肉湯' },
-    { emoji:'🍲', text:'酸辣湯' },
-    { emoji:'🍅', text:'蕃茄豆腐蛋花湯' },
-    { emoji:'🍄', text:'松露鮮菇盅' },
-    { emoji:'🥒', text:'苦瓜排骨湯' },
+    { emoji:'🍫', text:'巧克力小籠包', price:350 },
+    { emoji:'🍠', text:'芋泥小籠包', price:230 },
+    { emoji:'🫘', text:'豆沙小籠包', price:210 },
+    { emoji:'🍰', text:'核桃鬆糕', price:130 },
+    { emoji:'🍰', text:'赤豆鬆糕', price:100 },
+    { emoji:'🍮', text:'千層油糕', price:100 },
+    { emoji:'🍡', text:'芝麻湯圓', price:120 },
+    { emoji:'🥣', text:'酒釀芝麻湯圓', price:130 },
+    { emoji:'🍧', text:'銀耳四寶甜湯', price:100 },
   ]}
 ];
-const CAT_LABELS = ['主食','青菜','小菜','甜點'];
+const CAT_LABELS = ['主食','青菜','小菜/湯','甜點'];
 
 const ITEM_H = 72;
 const REEL_H = 216;
@@ -507,7 +696,7 @@ function buildReels() {
     let html = '';
     for (let c = 0; c < LOOPS; c++) {
       reel.items.forEach(item => {
-        html += `<div class="reel-item"><div class="reel-emoji">${item.emoji}</div><div class="reel-text">${item.text}</div></div>`;
+        html += `<div class="reel-item"><div class="reel-emoji">${item.emoji}</div><div class="reel-text">${item.text}</div><div class="reel-price">$${item.price}</div></div>`;
       });
     }
     strip.innerHTML = html;
@@ -550,6 +739,9 @@ buildLights();
 
 function spinAll() {
   if (isSpinning) return;
+  initAudio();          // 首次點擊啟動音訊（瀏覽器要求）
+  sndLeverPull();       // 拉霸啟動聲
+  startReelLoop();      // 滾輪滴答聲
   isSpinning = true;
   spinCount++;
   document.getElementById('spinCount').textContent = String(spinCount).padStart(2,'0');
@@ -595,8 +787,12 @@ function spinAll() {
       s.el.style.transition = 'none';
       s.el.style.transform = `translateY(${normY}px)`;
       results[ri] = REELS[ri].items[targetItem];
+      sndReelStop(ri);          // 該格停止「叩」聲
       finished++;
-      if (finished === 4) onAllDone(results);
+      if (finished === 4) {
+        stopReelLoop();         // 全部停止，關掉滾輪滴答聲
+        onAllDone(results);
+      }
     }, ri * 180 + 20 + duration + 80);
   });
 }
@@ -610,17 +806,21 @@ function onAllDone(results) {
 
   const display = document.getElementById('resultDisplay');
   display.className = 'result-display win reveal';
-  display.innerHTML = results.map((r,i) => `${r.emoji} ${r.text}`).join('　＋　');
+  const total = results.reduce((sum, r) => sum + r.price, 0);
+  display.innerHTML = results.map((r,i) => `${r.emoji} ${r.text} <span style="color:var(--gold-bright);font-family:'Share Tech Mono',monospace">$${r.price}</span>`).join('　＋　') + `　＝　<span style="color:var(--neon-red);font-family:'Share Tech Mono',monospace;font-size:15px">$${total}</span>`;
 
   setTimeout(() => showBigWin(results), 550);
 }
 
 function showBigWin(results) {
+  const total = results.reduce((sum, r) => sum + r.price, 0);
   const mealEl = document.getElementById('bigwinMeal');
   mealEl.innerHTML = results.map((r,i) =>
-    `<div class="bigwin-meal-item"><span class="bigwin-meal-cat">${CAT_LABELS[i]}</span><span class="bigwin-meal-dish">${r.emoji} ${r.text}</span></div>`
-  ).join('');
+    `<div class="bigwin-meal-item"><span class="bigwin-meal-cat">${CAT_LABELS[i]}</span><span class="bigwin-meal-dish">${r.emoji} ${r.text} <span class="bigwin-meal-price">$${r.price}</span></span></div>`
+  ).join('') +
+    `<div class="bigwin-total"><span class="bigwin-total-label">今日套餐總價</span><span class="bigwin-total-value">$${total}</span></div>`;
   document.getElementById('bigwin').classList.add('show');
+  sndJackpot();   // 中獎音效
   spawnCoins();
 }
 
