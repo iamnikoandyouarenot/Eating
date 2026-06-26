@@ -410,23 +410,51 @@
 
   <div class="result-panel" id="resultPanel">
     <div class="result-glow"></div>
-    <div class="result-text placeholder" id="resultText">轉動轉盤，讓命運決定午餐</div>
+    <div class="result-text placeholder" id="resultText">每轉一次重新洗牌 · 全菜單隨機抽選</div>
   </div>
 
   <button class="spin-btn" id="spinBtn" onclick="spin()">旋 轉</button>
 </div>
 
 <script>
-const dishes = [
-  "小籠包\n元盅雞湯",
-  "排骨蛋炒飯\n辣味黃瓜",
-  "蝦肉紅油抄手\n擔擔麵",
-  "絲瓜蝦仁小籠包\n乾煸四季豆",
-  "紅燒牛肉麵\n紅燒茄子",
-  "巧克力小籠包\n柳橙汁",
-  "什蔬蛋炒飯\n菜肉蒸餃",
-  "炸排骨\n蝦肉紅油燃麵"
+// ===== 完整菜單資料庫（鼎泰豐台灣官方菜色，近 90 道）=====
+// 每次旋轉前，從這裡隨機抽 8 道填入轉盤
+const MENU = [
+  // 小籠包
+  "小籠包", "蟹粉小籠包", "雞肉小籠包", "絲瓜蝦仁小籠包", "松露小籠包", "蔬食小籠包",
+  // 餃類 & 燒賣
+  "蝦肉煎餃", "菜肉蒸餃", "蝦肉蒸餃", "鮮魚蒸餃", "香菇素餃", "龍膽石斑蒸餃", "蝦仁燒賣", "糯肉燒賣",
+  // 湯麵
+  "紅燒牛肉麵", "元盅雞麵", "元盅牛肉麵", "雪菜肉絲湯麵", "蝦肉餛飩麵", "菜肉餛飩麵", "蝦仁麵", "排骨麵",
+  // 炒飯
+  "蝦仁蛋炒飯", "肉絲蛋炒飯", "蝦仁肉絲蛋炒飯", "排骨蛋炒飯", "什蔬蛋炒飯",
+  // 盤菜（青菜）
+  "炒高麗菜", "清炒蝦仁", "炒空心菜", "炒地瓜葉", "炒莧菜", "莧菜腐竹", "炒菠菜", "菠菜腐竹",
+  "炒豆苗", "豆苗蝦仁", "炒A菜", "炒山蘇",
+  // 開胃菜（小菜）
+  "乾煸四季豆", "涼拌雲耳", "招牌小菜", "烤麩", "辣味黃瓜", "寧式黃芽菜", "紹興醉雞", "炸排骨",
+  "紅燒茄子", "香辣牛肚", "糖醋排骨", "泡菜", "冷筍沙拉", "香酥蝦餅", "滷牛腱",
+  // 湯品
+  "元盅雞湯", "元盅牛肉湯", "紅燒牛肉湯", "菜肉餛飩湯", "蝦肉餛飩湯", "酸辣湯",
+  "蕃茄豆腐蛋花湯", "油豆腐細粉", "松露鮮菇盅", "苦瓜排骨湯",
+  // 甜點
+  "巧克力小籠包", "芋泥小籠包", "豆沙小籠包", "核桃鬆糕", "赤豆鬆糕", "千層油糕",
+  "糖水芝麻湯圓", "酒釀芝麻湯圓", "銀耳四寶甜湯"
 ];
+
+// 從資料庫隨機抽 n 道（不重複）
+function sampleMenu(count) {
+  const pool = [...MENU];
+  const picked = [];
+  for (let i = 0; i < count && pool.length > 0; i++) {
+    const idx = Math.floor(Math.random() * pool.length);
+    picked.push(pool.splice(idx, 1)[0]);
+  }
+  return picked;
+}
+
+// 當前轉盤上的 8 道菜（每次旋轉前重新抽）
+let dishes = sampleMenu(8);
 
 const COLORS = [
   ['#8b1a1a', '#c0272d'],
@@ -497,7 +525,7 @@ function drawWheel(angle) {
     ctx.textBaseline = 'middle';
 
     const lines = dishes[i].split('\n');
-    const textX = radius * 0.62;
+    const textX = radius * 0.60;
 
     if (lines.length === 2) {
       ctx.font = 'bold 13px "Noto Serif TC", serif';
@@ -509,11 +537,18 @@ function drawWheel(angle) {
       ctx.fillStyle = 'rgba(253,246,236,0.8)';
       ctx.fillText(lines[1], textX, 7);
     } else {
-      ctx.font = 'bold 13px "Noto Serif TC", serif';
+      // 單行菜名：依字數自動縮放字級
+      const name = lines[0];
+      const len = name.length;
+      let fontSize = 15;
+      if (len >= 7) fontSize = 12;
+      else if (len === 6) fontSize = 13;
+      else if (len === 5) fontSize = 14;
+      ctx.font = `bold ${fontSize}px "Noto Serif TC", serif`;
       ctx.fillStyle = GOLD;
-      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowColor = 'rgba(0,0,0,0.6)';
       ctx.shadowBlur = 3;
-      ctx.fillText(lines[0], textX, 0);
+      ctx.fillText(name, textX, 0);
     }
     ctx.restore();
   }
@@ -554,6 +589,10 @@ let totalRotation = 0;
 function spin() {
   if (spinning) return;
   spinning = true;
+
+  // 每次旋轉前，從完整菜單重新隨機抽 8 道
+  dishes = sampleMenu(8);
+  drawWheel(currentAngle);
 
   const btn = document.getElementById('spinBtn');
   const hub = document.getElementById('hub');
@@ -637,10 +676,7 @@ function onSpinComplete() {
   setTimeout(() => {
     resultPanel.classList.add('revealed');
     resultText.className = 'result-text';
-    const lines = dish.split('\n');
-    resultText.innerHTML = lines.length === 2
-      ? `<div style="color:var(--gold);font-size:11px;letter-spacing:4px;margin-bottom:6px;font-family:'Noto Sans TC',sans-serif;font-weight:300">✦ 今日命運推薦 ✦</div><div>${lines[0]}</div><div style="font-size:14px;color:rgba(253,246,236,0.65);font-weight:300;margin-top:4px;font-family:'Noto Sans TC',sans-serif">${lines[1]}</div>`
-      : `<div style="color:var(--gold);font-size:11px;letter-spacing:4px;margin-bottom:6px;font-family:'Noto Sans TC',sans-serif;font-weight:300">✦ 今日命運推薦 ✦</div>${lines[0]}`;
+    resultText.innerHTML = `<div style="color:var(--gold);font-size:11px;letter-spacing:4px;margin-bottom:8px;font-family:'Noto Sans TC',sans-serif;font-weight:300">✦ 今日命運推薦 ✦</div><div style="font-size:22px">${dish}</div><div style="font-size:11px;color:rgba(253,246,236,0.45);font-weight:300;margin-top:8px;font-family:'Noto Sans TC',sans-serif">— 這就是命，共 ${MENU.length} 道菜隨機抽選 —</div>`;
     burst();
   }, 200);
 }
