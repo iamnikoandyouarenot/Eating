@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>鼎泰豐 ｜ 幸運老虎機</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@600;700;900&family=Noto+Sans+TC:wght@300;400;700;900&family=Cinzel:wght@600;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --felt: #0a3d2e;
+  --felt-light: #0f5240;
+  --felt-dark: #062018;
+  --wood: #3a1f12;
+  --wood-light: #5c3420;
+  --gold: #e8c057;
+  --gold-bright: #ffe08a;
+  --gold-deep: #b8902f;
+  --red: #c0272d;
+  --red-deep: #8b1a1a;
+  --neon-red: #ff3b4e;
+  --cream: #f7e9d0;
+  --reel-bg: #1a1410;
+  --black: #0d0a08;
+  --text-dim: rgba(247,233,208,0.55);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background:
+    radial-gradient(ellipse at 50% 30%, var(--felt-light) 0%, var(--felt) 40%, var(--felt-dark) 100%);
+  font-family: 'Noto Sans TC', sans-serif;
+  min-height: 100vh;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  overflow-x: hidden; position: relative;
+  padding: 20px 0;
+}
+/* Felt texture + vignette */
+body::before {
+  content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+  background-image:
+    repeating-radial-gradient(circle at 50% 50%, transparent 0, transparent 2px, rgba(0,0,0,0.04) 3px),
+    radial-gradient(ellipse at 50% 50%, transparent 30%, rgba(0,0,0,0.5) 100%);
+  background-size: 6px 6px, 100% 100%;
+}
+/* Casino light strands top */
+.light-strand {
+  position: fixed; top: 0; left: 0; right: 0; height: 8px; z-index: 5;
+  display: flex; justify-content: space-around; pointer-events: none;
+}
+.bulb {
+  width: 7px; height: 7px; border-radius: 50%;
+  background: var(--gold-bright);
+  box-shadow: 0 0 8px var(--gold-bright), 0 0 16px var(--gold);
+  animation: bulbChase 1.2s steps(1) infinite;
+}
+@keyframes bulbChase { 0%,100% { opacity: 1; } 50% { opacity: 0.25; } }
+
+.wrapper { position: relative; z-index: 2; display: flex; flex-direction: column; align-items: center; padding: 24px 12px; }
+
+/* ============ TITLE ============ */
+.title-block { text-align: center; margin-bottom: 18px; position: relative; }
+.title-ornament {
+  display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 6px;
+}
+.title-ornament .line {
+  height: 2px; width: 60px;
+  background: linear-gradient(90deg, transparent, var(--gold));
+}
+.title-ornament .line.r { background: linear-gradient(90deg, var(--gold), transparent); }
+.title-ornament .diamond { color: var(--gold); font-size: 14px; text-shadow: 0 0 10px var(--gold); }
+.title-main {
+  font-family: 'Noto Serif TC', serif; font-weight: 900;
+  font-size: clamp(54px, 13vw, 96px);
+  letter-spacing: 12px;
+  padding-left: 12px;
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 45%, var(--gold-deep) 75%, var(--gold-bright) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 2px 2px rgba(0,0,0,0.6)) drop-shadow(0 0 22px rgba(232,192,87,0.45));
+  line-height: 1;
+  position: relative;
+}
+.title-sub {
+  font-family: 'Cinzel', serif; font-weight: 700;
+  font-size: clamp(11px, 2.4vw, 15px); letter-spacing: 7px;
+  color: var(--gold); text-shadow: 0 0 10px rgba(232,192,87,0.4);
+  margin-top: 8px;
+}
+.title-tagline {
+  font-size: 11px; letter-spacing: 5px; color: var(--cream);
+  opacity: 0.7; margin-top: 5px; font-weight: 300;
+}
+
+/* ============ MACHINE CABINET ============ */
+.cabinet {
+  width: min(720px, 96vw);
+  background:
+    linear-gradient(160deg, var(--wood-light) 0%, var(--wood) 50%, #2a1610 100%);
+  border-radius: 28px 28px 20px 20px;
+  padding: 10px;
+  box-shadow:
+    0 0 0 2px var(--gold-deep),
+    0 0 0 6px var(--wood),
+    0 0 0 8px var(--gold-deep),
+    0 30px 60px rgba(0,0,0,0.6),
+    0 0 80px rgba(0,0,0,0.4),
+    inset 0 2px 4px rgba(255,255,255,0.1);
+  position: relative;
+}
+/* Gold corner filigree */
+.cabinet-corner {
+  position: absolute; width: 38px; height: 38px; z-index: 3;
+  border: 2px solid var(--gold); opacity: 0.7;
+}
+.cabinet-corner.tl { top: 14px; left: 14px; border-right: none; border-bottom: none; border-radius: 12px 0 0 0; }
+.cabinet-corner.tr { top: 14px; right: 14px; border-left: none; border-bottom: none; border-radius: 0 12px 0 0; }
+.cabinet-corner.bl { bottom: 14px; left: 14px; border-right: none; border-top: none; border-radius: 0 0 0 12px; }
+.cabinet-corner.br { bottom: 14px; right: 14px; border-left: none; border-top: none; border-radius: 0 0 12px 0; }
+
+/* Inner bezel housing the reels */
+.bezel {
+  background: linear-gradient(180deg, #2a1c14, #1a1009);
+  border-radius: 18px;
+  padding: 16px;
+  box-shadow:
+    inset 0 4px 12px rgba(0,0,0,0.7),
+    inset 0 -2px 4px rgba(255,255,255,0.05);
+  position: relative;
+}
+
+/* Top marquee inside cabinet */
+.machine-marquee {
+  background: linear-gradient(180deg, var(--red), var(--red-deep));
+  border: 2px solid var(--gold);
+  border-radius: 10px;
+  padding: 8px 0; margin-bottom: 14px; overflow: hidden;
+  box-shadow: inset 0 0 20px rgba(0,0,0,0.4), 0 0 16px rgba(192,39,45,0.5);
+  position: relative;
+}
+.machine-marquee::after {
+  content: ''; position: absolute; inset: 3px; border: 1px solid rgba(232,192,87,0.4); border-radius: 6px; pointer-events: none;
+}
+.marquee-inner { display: flex; gap: 50px; white-space: nowrap; animation: marqueeScroll 16s linear infinite; width: max-content; }
+@keyframes marqueeScroll { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+.marquee-inner span {
+  font-family: 'Noto Serif TC', serif; font-weight: 700;
+  font-size: 13px; color: var(--gold-bright); letter-spacing: 4px;
+  text-shadow: 0 0 8px rgba(232,192,87,0.6);
+}
+
+/* Category labels */
+.category-labels { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 10px; }
+.cat-label {
+  text-align: center; font-size: 12px; letter-spacing: 4px; font-weight: 900;
+  padding: 6px 0; border-radius: 6px;
+  font-family: 'Noto Serif TC', serif;
+  background: linear-gradient(180deg, rgba(0,0,0,0.4), rgba(0,0,0,0.1));
+  border: 1px solid var(--gold-deep);
+  color: var(--gold-bright);
+  text-shadow: 0 0 8px rgba(232,192,87,0.5);
+}
+
+/* Reels */
+.reels-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+.reel-wrap {
+  position: relative; border-radius: 8px; overflow: hidden; height: 216px;
+  background: linear-gradient(180deg, #221a12, var(--reel-bg) 50%, #221a12);
+  border: 3px solid var(--gold-deep);
+  box-shadow:
+    inset 0 0 25px rgba(0,0,0,0.85),
+    inset 0 6px 10px rgba(0,0,0,0.6),
+    0 0 0 1px rgba(0,0,0,0.5);
+}
+/* Glass reflection */
+.reel-wrap .glass {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  background: linear-gradient(105deg, rgba(255,255,255,0.10) 0%, transparent 22%, transparent 78%, rgba(255,255,255,0.05) 100%);
+  border-radius: 6px;
+}
+/* fade top/bottom */
+.reel-wrap::before, .reel-wrap::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 62px; z-index: 4; pointer-events: none;
+}
+.reel-wrap::before { top: 0; background: linear-gradient(to bottom, var(--reel-bg) 0%, rgba(26,20,16,0.4) 60%, transparent 100%); }
+.reel-wrap::after  { bottom: 0; background: linear-gradient(to top, var(--reel-bg) 0%, rgba(26,20,16,0.4) 60%, transparent 100%); }
+.reel-strip { position: absolute; top: 0; left: 0; right: 0; display: flex; flex-direction: column; align-items: center; will-change: transform; }
+.reel-item { width: 100%; height: 72px; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 4px 6px; flex-shrink: 0; }
+.reel-emoji { font-size: 23px; line-height: 1; margin-bottom: 2px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+.reel-text { font-size: 10.5px; color: var(--cream); text-align: center; font-weight: 700; line-height: 1.2; font-family: 'Noto Sans TC', sans-serif; text-shadow: 0 1px 3px rgba(0,0,0,0.9); }
+.reel-price { font-size: 9.5px; color: var(--gold-bright); text-align: center; font-family: 'Share Tech Mono', monospace; margin-top: 2px; text-shadow: 0 0 6px rgba(232,192,87,0.4); }
+
+/* Center win line — payline (overlays the reels row, which is 216px tall) */
+.payline {
+  position: absolute; left: 0; right: 0; top: 0; bottom: 0; z-index: 7; pointer-events: none;
+}
+.payline-bar {
+  position: absolute; left: 0; right: 0; top: 50%; transform: translateY(-50%);
+  height: 76px; border-radius: 4px;
+  border: 2px solid transparent;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+.payline-bar.lit {
+  border-color: var(--neon-red);
+  box-shadow: 0 0 18px rgba(255,59,78,0.7), inset 0 0 18px rgba(255,59,78,0.2);
+  animation: payPulse 0.5s ease-in-out infinite alternate;
+}
+@keyframes payPulse {
+  from { box-shadow: 0 0 12px rgba(255,59,78,0.5), inset 0 0 12px rgba(255,59,78,0.15); }
+  to   { box-shadow: 0 0 28px rgba(255,59,78,0.9), inset 0 0 24px rgba(255,59,78,0.3); }
+}
+/* Payline arrows */
+.payline-arrow {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  font-size: 18px; color: var(--neon-red); opacity: 0;
+  transition: opacity 0.3s; text-shadow: 0 0 10px var(--neon-red);
+}
+.payline-arrow.left { left: -22px; }
+.payline-arrow.right { right: -22px; }
+.payline-bar.lit ~ .payline-arrow,
+.payline-arrow.show { opacity: 1; animation: arrowBlink 0.6s step-end infinite; }
+@keyframes arrowBlink { 50% { opacity: 0.3; } }
+
+/* ============ CONTROL DECK ============ */
+.control-deck {
+  background: linear-gradient(180deg, var(--wood-light), var(--wood));
+  border-radius: 16px; padding: 16px;
+  margin-top: 4px;
+  box-shadow: inset 0 2px 4px rgba(255,255,255,0.08), inset 0 -3px 8px rgba(0,0,0,0.5);
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.meters { display: flex; gap: 14px; }
+.meter {
+  background: var(--black); border: 2px solid var(--gold-deep); border-radius: 8px;
+  padding: 7px 18px; text-align: center; min-width: 90px;
+  box-shadow: inset 0 0 12px rgba(0,0,0,0.8);
+}
+.meter-label { font-size: 9px; letter-spacing: 3px; color: var(--text-dim); margin-bottom: 3px; font-family: 'Share Tech Mono', monospace; }
+.meter-value { font-size: 24px; color: var(--neon-red); font-family: 'Share Tech Mono', monospace; letter-spacing: 2px; text-shadow: 0 0 10px var(--neon-red); }
+
+.lever-row { display: flex; align-items: center; gap: 20px; }
+.spin-btn {
+  font-family: 'Noto Serif TC', serif; font-weight: 900;
+  font-size: 26px; letter-spacing: 8px; padding-left: 8px;
+  color: var(--red-deep);
+  background: radial-gradient(circle at 38% 30%, var(--gold-bright), var(--gold) 55%, var(--gold-deep) 100%);
+  border: 3px solid var(--gold-bright);
+  border-radius: 50px; padding: 14px 50px; cursor: pointer;
+  position: relative; overflow: hidden;
+  transition: transform 0.12s, box-shadow 0.12s;
+  box-shadow: 0 0 24px rgba(232,192,87,0.6), 0 6px 0 var(--gold-deep), 0 8px 14px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.5);
+  text-shadow: 0 1px 1px rgba(255,255,255,0.3);
+}
+.spin-btn::before {
+  content: ''; position: absolute; top: 0; left: -80%; width: 55%; height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.5), transparent);
+  transform: skewX(-18deg); transition: left 0.55s ease;
+}
+.spin-btn:hover::before { left: 150%; }
+.spin-btn:hover { transform: translateY(-2px); box-shadow: 0 0 40px rgba(232,192,87,0.85), 0 8px 0 var(--gold-deep), 0 12px 18px rgba(0,0,0,0.5), inset 0 2px 4px rgba(255,255,255,0.5); }
+.spin-btn:active { transform: translateY(5px); box-shadow: 0 0 20px rgba(232,192,87,0.6), 0 1px 0 var(--gold-deep), inset 0 2px 4px rgba(255,255,255,0.4); }
+.spin-btn:disabled { opacity: 0.55; cursor: not-allowed; transform: none; }
+
+.result-display {
+  width: 100%; text-align: center; min-height: 30px;
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 4px 12px;
+  font-size: 13px; color: var(--text-dim);
+  font-family: 'Noto Sans TC', sans-serif; letter-spacing: 1px;
+  padding-top: 8px;
+  transition: all 0.3s;
+}
+.result-display.win { color: var(--gold-bright); text-shadow: 0 0 12px rgba(232,192,87,0.5); font-weight: 700; }
+.result-display.reveal { animation: resultReveal 0.4s ease; }
+@keyframes resultReveal { 0% { transform: scale(0.96); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+/* ============ JACKPOT OVERLAY ============ */
+.bigwin-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(6,16,12,0.85); backdrop-filter: blur(5px);
+  opacity: 0; pointer-events: none; transition: opacity 0.35s; padding: 20px;
+}
+.bigwin-overlay.show { opacity: 1; pointer-events: all; }
+.bigwin-box {
+  text-align: center; animation: bigWinPop 0.55s cubic-bezier(0.175,0.885,0.32,1.275);
+  background: linear-gradient(160deg, var(--wood-light), #1a0e08);
+  border: 3px solid var(--gold);
+  border-radius: 20px; padding: 36px 40px;
+  box-shadow: 0 0 0 4px var(--gold-deep), 0 0 60px rgba(232,192,87,0.4), 0 20px 60px rgba(0,0,0,0.7);
+  max-width: 440px; width: 100%;
+}
+@keyframes bigWinPop { 0% { transform: scale(0.4) rotate(-6deg); opacity: 0; } 100% { transform: scale(1) rotate(0deg); opacity: 1; } }
+.bigwin-text {
+  font-family: 'Cinzel', serif; font-weight: 900;
+  font-size: clamp(40px, 10vw, 64px); letter-spacing: 4px;
+  padding-left: 4px;
+  background: linear-gradient(180deg, var(--gold-bright) 0%, var(--gold) 45%, var(--red) 100%);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+  filter: drop-shadow(0 0 24px rgba(232,192,87,0.7));
+  animation: bigWinGlow 0.9s ease-in-out infinite alternate; line-height: 1;
+}
+@keyframes bigWinGlow {
+  from { filter: drop-shadow(0 0 16px rgba(232,192,87,0.5)); }
+  to   { filter: drop-shadow(0 0 40px rgba(255,59,78,0.7)) drop-shadow(0 0 26px rgba(232,192,87,0.9)); }
+}
+.bigwin-cn { font-family: 'Noto Serif TC', serif; font-weight: 700; font-size: 16px; letter-spacing: 6px; color: var(--gold-bright); margin-top: 4px; }
+.bigwin-meal { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; }
+.bigwin-meal-item {
+  display: flex; align-items: center; justify-content: space-between;
+  background: rgba(0,0,0,0.35); border: 1px solid var(--gold-deep);
+  border-radius: 10px; padding: 10px 16px;
+}
+.bigwin-meal-cat { font-size: 12px; letter-spacing: 3px; color: var(--gold); font-family: 'Noto Serif TC', serif; font-weight: 700; }
+.bigwin-meal-dish { font-size: 15px; color: var(--cream); font-weight: 700; }
+.bigwin-meal-price { font-size: 13px; color: var(--gold-bright); font-family: 'Share Tech Mono', monospace; margin-left: 6px; }
+.bigwin-total {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-top: 6px; padding: 12px 16px;
+  background: linear-gradient(135deg, rgba(192,39,45,0.25), rgba(139,26,26,0.25));
+  border: 1px solid var(--neon-red); border-radius: 10px;
+  box-shadow: 0 0 16px rgba(255,59,78,0.25);
+}
+.bigwin-total-label { font-size: 13px; letter-spacing: 3px; color: var(--cream); font-family: 'Noto Serif TC', serif; font-weight: 700; }
+.bigwin-total-value { font-size: 24px; color: var(--neon-red); font-family: 'Share Tech Mono', monospace; text-shadow: 0 0 12px var(--neon-red); letter-spacing: 1px; }
+.bigwin-close {
+  margin-top: 24px; font-family: 'Noto Serif TC', serif; font-weight: 700;
+  font-size: 14px; letter-spacing: 4px; color: var(--red-deep);
+  cursor: pointer; background: var(--gold); border: none; border-radius: 30px;
+  padding: 10px 28px; transition: all 0.2s;
+  box-shadow: 0 3px 0 var(--gold-deep);
+}
+.bigwin-close:hover { background: var(--gold-bright); transform: translateY(-1px); }
+.bigwin-close:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--gold-deep); }
+
+/* coins / chips burst */
+.spark { position: fixed; pointer-events: none; z-index: 201; animation: sparkFly linear forwards; }
+@keyframes sparkFly {
+  0% { transform: translate(0,0) rotate(0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--tx), var(--ty)) rotate(var(--rot)) scale(0.4); opacity: 0; }
+}
+</style>
+</head>
+<body>
+
+<div class="light-strand" id="lightStrand"></div>
+
+<div class="bigwin-overlay" id="bigwin">
+  <div class="bigwin-box">
+    <div class="bigwin-text">JACKPOT</div>
+    <div class="bigwin-cn">今 日 套 餐 出 爐</div>
+    <div class="bigwin-meal" id="bigwinMeal"></div>
+    <button class="bigwin-close" onclick="closeBigWin()">開 動 ！</button>
+  </div>
+</div>
+
+<div class="wrapper">
+  <div class="title-block">
+    <div class="title-ornament">
+      <span class="line"></span>
+      <span class="diamond">◆</span>
+      <span class="line r"></span>
+    </div>
+    <div class="title-main">鼎泰豐</div>
+    <div class="title-sub">FORTUNE SLOT</div>
+    <div class="title-tagline">命 運 為 您 上 菜</div>
+  </div>
+
+  <div class="cabinet">
+    <span class="cabinet-corner tl"></span>
+    <span class="cabinet-corner tr"></span>
+    <span class="cabinet-corner bl"></span>
+    <span class="cabinet-corner br"></span>
+
+    <div class="bezel">
+      <div class="machine-marquee">
+        <div class="marquee-inner" id="marqueeTop"></div>
+      </div>
+
+      <div class="category-labels">
+        <div class="cat-label">主 食</div>
+        <div class="cat-label">青 菜</div>
+        <div class="cat-label">小 菜</div>
+        <div class="cat-label">甜 點</div>
+      </div>
+
+      <div style="position:relative;">
+        <div class="reels-row" id="reelsRow"></div>
+        <div class="payline">
+          <div class="payline-bar" id="paylineBar"></div>
+          <span class="payline-arrow left" id="arrowL">▶</span>
+          <span class="payline-arrow right" id="arrowR">◀</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="control-deck">
+      <div class="meters">
+        <div class="meter">
+          <div class="meter-label">SPINS</div>
+          <div class="meter-value" id="spinCount">00</div>
+        </div>
+        <div class="meter">
+          <div class="meter-label">LUCKY</div>
+          <div class="meter-value" id="luckyNum">88</div>
+        </div>
+      </div>
+
+      <div class="lever-row">
+        <button class="spin-btn" id="spinBtn" onclick="spinAll()">開 飯</button>
+      </div>
+
+      <div class="result-display" id="resultDisplay">按 下「開 飯」決 定 今 日 午 餐</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const REELS = [
+  // 主食：小籠包 / 餃類燒賣 / 湯麵 / 炒飯（價格為一籠/整份）
+  { items: [
+    { emoji:'🥟', text:'小籠包', price:290 },
+    { emoji:'🦀', text:'蟹粉小籠包', price:430 },
+    { emoji:'🐓', text:'雞肉小籠包', price:270 },
+    { emoji:'🥒', text:'絲瓜蝦仁小籠包', price:380 },
+    { emoji:'🍄', text:'松露小籠包', price:500 },
+    { emoji:'🥬', text:'蔬食小籠包', price:310 },
+    { emoji:'🥟', text:'蝦肉煎餃', price:250 },
+    { emoji:'🥬', text:'菜肉蒸餃', price:290 },
+    { emoji:'🦐', text:'蝦肉蒸餃', price:320 },
+    { emoji:'🐟', text:'鮮魚蒸餃', price:300 },
+    { emoji:'🍄', text:'香菇素餃', price:300 },
+    { emoji:'🐠', text:'龍膽石斑蒸餃', price:340 },
+    { emoji:'🦐', text:'蝦仁燒賣', price:400 },
+    { emoji:'🍚', text:'糯肉燒賣', price:280 },
+    { emoji:'🍜', text:'紅燒牛肉麵', price:300 },
+    { emoji:'🍲', text:'元盅雞湯麵', price:300 },
+    { emoji:'🐄', text:'元盅牛肉麵', price:290 },
+    { emoji:'🥬', text:'雪菜肉絲湯麵', price:190 },
+    { emoji:'🦐', text:'蝦肉餛飩麵', price:230 },
+    { emoji:'🥟', text:'菜肉餛飩麵', price:200 },
+    { emoji:'🦐', text:'蝦仁麵', price:290 },
+    { emoji:'🍖', text:'排骨麵', price:260 },
+    { emoji:'🍤', text:'蝦仁蛋炒飯', price:320 },
+    { emoji:'🍛', text:'肉絲蛋炒飯', price:250 },
+    { emoji:'🍚', text:'蝦仁肉絲蛋炒飯', price:360 },
+    { emoji:'🍖', text:'排骨蛋炒飯', price:310 },
+    { emoji:'🥗', text:'什蔬蛋炒飯', price:250 },
+  ]},
+  // 青菜：盤菜
+  { items: [
+    { emoji:'🥬', text:'高麗菜', price:250 },
+    { emoji:'🦐', text:'清炒蝦仁', price:520 },
+    { emoji:'🌿', text:'空心菜', price:250 },
+    { emoji:'🍠', text:'地瓜葉', price:250 },
+    { emoji:'🥬', text:'莧菜', price:250 },
+    { emoji:'🥬', text:'莧菜腐竹', price:330 },
+    { emoji:'🌱', text:'菠菜', price:250 },
+    { emoji:'🌱', text:'菠菜腐竹', price:330 },
+    { emoji:'🫛', text:'豆苗', price:440 },
+    { emoji:'🦐', text:'豆苗蝦仁', price:650 },
+    { emoji:'🥬', text:'A菜', price:250 },
+    { emoji:'🌿', text:'山蘇', price:390 },
+  ]},
+  // 小菜：開胃菜
+  { items: [
+    { emoji:'🫛', text:'乾煸四季豆', price:200 },
+    { emoji:'🍄', text:'涼拌雲耳', price:130 },
+    { emoji:'🥗', text:'小菜', price:130 },
+    { emoji:'🍢', text:'烤麩', price:130 },
+    { emoji:'🥒', text:'辣味黃瓜', price:130 },
+    { emoji:'🥬', text:'寧式黃芽菜', price:130 },
+    { emoji:'🍗', text:'紹興醉雞', price:380 },
+    { emoji:'🍖', text:'炸排骨', price:160 },
+    { emoji:'🍆', text:'紅燒茄子', price:150 },
+    { emoji:'🌶️', text:'香辣牛肚', price:200 },
+    { emoji:'🍖', text:'糖醋排骨', price:280 },
+    { emoji:'🥬', text:'泡菜', price:120 },
+    { emoji:'🦐', text:'香酥蝦餅', price:290 },
+    { emoji:'🐄', text:'滷牛腱', price:240 },
+  ]},
+  // 甜點 + 湯品（甜湯）
+  { items: [
+    { emoji:'🍫', text:'巧克力小籠包', price:350 },
+    { emoji:'🍠', text:'芋泥小籠包', price:230 },
+    { emoji:'🫘', text:'豆沙小籠包', price:210 },
+    { emoji:'🍰', text:'核桃鬆糕', price:130 },
+    { emoji:'🍰', text:'赤豆鬆糕', price:100 },
+    { emoji:'🍮', text:'千層油糕', price:100 },
+    { emoji:'🍡', text:'芝麻湯圓', price:120 },
+    { emoji:'🍧', text:'銀耳四寶甜湯', price:100 },
+    { emoji:'🍲', text:'元盅雞湯', price:250 },
+    { emoji:'🥩', text:'紅燒牛肉湯', price:270 },
+    { emoji:'🍲', text:'酸辣湯', price:120 },
+    { emoji:'🍅', text:'蕃茄豆腐蛋花湯', price:200 },
+    { emoji:'🍄', text:'松露鮮菇盅', price:240 },
+    { emoji:'🥒', text:'苦瓜排骨湯', price:230 },
+  ]}
+];
+const CAT_LABELS = ['主食','青菜','小菜','甜點'];
+
+const ITEM_H = 72;
+const REEL_H = 216;
+const CENTER_OFFSET = (REEL_H / 2) - (ITEM_H / 2); // px to center an item
+const LOOPS = 8; // how many copies of the item list are stacked
+
+let spinCount = 0;
+let isSpinning = false;
+let strips = [];
+
+function buildReels() {
+  const row = document.getElementById('reelsRow');
+  REELS.forEach((reel, ri) => {
+    const wrap = document.createElement('div');
+    wrap.className = 'reel-wrap';
+    const strip = document.createElement('div');
+    strip.className = 'reel-strip';
+    // stack LOOPS copies
+    let html = '';
+    for (let c = 0; c < LOOPS; c++) {
+      reel.items.forEach(item => {
+        html += `<div class="reel-item"><div class="reel-emoji">${item.emoji}</div><div class="reel-text">${item.text}</div><div class="reel-price">$${item.price}</div></div>`;
+      });
+    }
+    strip.innerHTML = html;
+    wrap.appendChild(strip);
+    const glass = document.createElement('div');
+    glass.className = 'glass';
+    wrap.appendChild(glass);
+    row.appendChild(wrap);
+
+    // initial: show a random item from copy 0, centered
+    const n = reel.items.length;
+    const startItem = Math.floor(Math.random() * n);
+    const startAbsolute = startItem; // copy 0
+    const y = -(startAbsolute * ITEM_H) + CENTER_OFFSET;
+    strip.style.transition = 'none';
+    strip.style.transform = `translateY(${y}px)`;
+    strips.push({ el: strip, n: n, currentItem: startItem });
+  });
+}
+buildReels();
+
+function buildMarquee() {
+  const texts = ['鼎 泰 豐','◆ 幸 運 老 虎 機 ◆','小 籠 包','★ 今 日 好 運 ★','元 盅 雞 湯','◆ JACKPOT ◆','巧 克 力 小 籠 包','★ 大 吉 大 利 ★'];
+  const el = document.getElementById('marqueeTop');
+  el.innerHTML = [...texts, ...texts].map(t => `<span>${t}</span>`).join('');
+}
+buildMarquee();
+
+function buildLights() {
+  const strand = document.getElementById('lightStrand');
+  const count = Math.ceil(window.innerWidth / 24);
+  for (let i = 0; i < count; i++) {
+    const b = document.createElement('div');
+    b.className = 'bulb';
+    b.style.animationDelay = `${(i % 4) * 0.3}s`;
+    strand.appendChild(b);
+  }
+}
+buildLights();
+
+function spinAll() {
+  if (isSpinning) return;
+  isSpinning = true;
+  spinCount++;
+  document.getElementById('spinCount').textContent = String(spinCount).padStart(2,'0');
+  document.getElementById('luckyNum').textContent = String(Math.floor(Math.random()*89)+10);
+  document.getElementById('spinBtn').disabled = true;
+  document.getElementById('paylineBar').classList.remove('lit');
+  document.getElementById('arrowL').classList.remove('show');
+  document.getElementById('arrowR').classList.remove('show');
+  const display = document.getElementById('resultDisplay');
+  display.className = 'result-display';
+  display.textContent = '— 轉 動 中 —';
+
+  const results = new Array(4);
+  let finished = 0;
+
+  strips.forEach((s, ri) => {
+    const n = s.n;
+    // pick target item
+    const targetItem = Math.floor(Math.random() * n);
+    // Reset to copy 0 at currentItem (no transition)
+    const startAbsolute = s.currentItem; // copy 0
+    const startY = -(startAbsolute * ITEM_H) + CENTER_OFFSET;
+    s.el.style.transition = 'none';
+    s.el.style.transform = `translateY(${startY}px)`;
+    // force reflow so the reset applies before animating
+    void s.el.offsetHeight;
+
+    // Spin downward: several full loops + delta to land on targetItem
+    const loopsToSpin = 2 + ri; // staggered: later reels spin more
+    const targetAbsolute = startAbsolute + (loopsToSpin * n) + ((targetItem - s.currentItem + n) % n);
+    const targetY = -(targetAbsolute * ITEM_H) + CENTER_OFFSET;
+    const duration = 1800 + ri * 450;
+
+    setTimeout(() => {
+      s.el.style.transition = `transform ${duration}ms cubic-bezier(0.10,0.85,0.25,1.0)`;
+      s.el.style.transform = `translateY(${targetY}px)`;
+    }, ri * 180 + 20);
+
+    setTimeout(() => {
+      // snap back to copy 0 at targetItem (visually identical, keeps in range)
+      s.currentItem = targetItem;
+      const normY = -(targetItem * ITEM_H) + CENTER_OFFSET;
+      s.el.style.transition = 'none';
+      s.el.style.transform = `translateY(${normY}px)`;
+      results[ri] = REELS[ri].items[targetItem];
+      finished++;
+      if (finished === 4) onAllDone(results);
+    }, ri * 180 + 20 + duration + 80);
+  });
+}
+
+function onAllDone(results) {
+  isSpinning = false;
+  document.getElementById('spinBtn').disabled = false;
+  document.getElementById('paylineBar').classList.add('lit');
+  document.getElementById('arrowL').classList.add('show');
+  document.getElementById('arrowR').classList.add('show');
+
+  const display = document.getElementById('resultDisplay');
+  display.className = 'result-display win reveal';
+  const total = results.reduce((sum, r) => sum + r.price, 0);
+  display.innerHTML = results.map((r,i) => `${r.emoji} ${r.text} <span style="color:var(--gold-bright);font-family:'Share Tech Mono',monospace">$${r.price}</span>`).join('　＋　') + `　＝　<span style="color:var(--neon-red);font-family:'Share Tech Mono',monospace;font-size:15px">$${total}</span>`;
+
+  setTimeout(() => showBigWin(results), 550);
+}
+
+function showBigWin(results) {
+  const total = results.reduce((sum, r) => sum + r.price, 0);
+  const mealEl = document.getElementById('bigwinMeal');
+  mealEl.innerHTML = results.map((r,i) =>
+    `<div class="bigwin-meal-item"><span class="bigwin-meal-cat">${CAT_LABELS[i]}</span><span class="bigwin-meal-dish">${r.emoji} ${r.text} <span class="bigwin-meal-price">$${r.price}</span></span></div>`
+  ).join('') +
+    `<div class="bigwin-total"><span class="bigwin-total-label">今日套餐總價</span><span class="bigwin-total-value">$${total}</span></div>`;
+  document.getElementById('bigwin').classList.add('show');
+  spawnCoins();
+}
+
+function closeBigWin() {
+  document.getElementById('bigwin').classList.remove('show');
+}
+
+function spawnCoins() {
+  const coins = ['🪙','💰','🥟','✨','💎','🟡'];
+  for (let i = 0; i < 55; i++) {
+    const el = document.createElement('div');
+    el.className = 'spark';
+    el.textContent = coins[Math.floor(Math.random()*coins.length)];
+    const size = 16 + Math.random() * 16;
+    const tx = (Math.random() - 0.5) * window.innerWidth * 1.3;
+    const ty = -(Math.random() * window.innerHeight * 1.0) - 100;
+    const rot = (Math.random() - 0.5) * 720;
+    el.style.cssText = `font-size:${size}px;left:${30+Math.random()*40}vw;top:${48+Math.random()*15}vh;--tx:${tx}px;--ty:${ty}px;--rot:${rot}deg;animation-duration:${1.1+Math.random()*1.3}s;animation-delay:${Math.random()*0.4}s;`;
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 2800);
+  }
+}
+</script>
+</body>
+</html>
