@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今天鼎泰豐吃什麼？</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700;900&family=Noto+Sans+TC:wght@300;400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --red: #c0272d;
+    --dark-red: #8b1a1a;
+    --gold: #c9a84c;
+    --light-gold: #e8d5a3;
+    --cream: #fdf6ec;
+    --dark: #1a0a0a;
+    --ink: #2d1515;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--dark);
+    font-family: 'Noto Serif TC', serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    position: relative;
+  }
+
+  /* Decorative background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 50%, rgba(192,39,45,0.12) 0%, transparent 60%),
+      radial-gradient(ellipse at 80% 50%, rgba(201,168,76,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse at 50% 10%, rgba(192,39,45,0.08) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* Subtle grid pattern */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .container {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    padding: 20px;
+  }
+
+  /* Title */
+  .title-block {
+    text-align: center;
+  }
+  .title-cn {
+    font-size: 13px;
+    letter-spacing: 8px;
+    color: var(--gold);
+    margin-bottom: 6px;
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+  }
+  .title-main {
+    font-size: 30px;
+    font-weight: 900;
+    color: var(--cream);
+    letter-spacing: 4px;
+    line-height: 1.2;
+  }
+  .title-main span {
+    color: var(--gold);
+  }
+  .title-deco {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 8px;
+    justify-content: center;
+  }
+  .title-deco::before, .title-deco::after {
+    content: '';
+    height: 1px;
+    width: 40px;
+    background: linear-gradient(90deg, transparent, var(--gold));
+  }
+  .title-deco::after {
+    background: linear-gradient(90deg, var(--gold), transparent);
+  }
+  .title-deco-inner {
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 4px;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+
+  /* Wheel wrapper */
+  .wheel-wrapper {
+    position: relative;
+    width: 340px;
+    height: 340px;
+  }
+
+  /* Outer ring decoration */
+  .ring-outer {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 1px solid rgba(201,168,76,0.3);
+    animation: ringRotate 20s linear infinite;
+  }
+  .ring-outer::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 50%;
+    border: 1px dashed rgba(201,168,76,0.15);
+  }
+  /* Tick marks on outer ring */
+  .ring-outer::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: -2px;
+    width: 6px;
+    height: 2px;
+    background: var(--gold);
+    border-radius: 1px;
+    transform: translateY(-50%);
+    box-shadow:
+      0 -80px 0 var(--gold),
+      0 80px 0 var(--gold);
+  }
+  @keyframes ringRotate {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  canvas#wheel {
+    position: relative;
+    z-index: 2;
+    border-radius: 50%;
+    box-shadow:
+      0 0 0 3px var(--dark),
+      0 0 0 5px rgba(201,168,76,0.4),
+      0 20px 60px rgba(0,0,0,0.6),
+      0 0 40px rgba(192,39,45,0.2);
+    display: block;
+  }
+
+  /* Pointer */
+  .pointer {
+    position: absolute;
+    top: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    width: 0;
+    height: 0;
+    filter: drop-shadow(0 2px 6px rgba(0,0,0,0.6));
+  }
+  .pointer svg {
+    width: 32px;
+    height: 36px;
+  }
+
+  /* Center hub */
+  .hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #3a1a1a, var(--dark));
+    border: 3px solid var(--gold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    box-shadow:
+      0 0 0 2px rgba(201,168,76,0.2),
+      inset 0 2px 4px rgba(255,255,255,0.05),
+      0 4px 12px rgba(0,0,0,0.5);
+    cursor: pointer;
+    transition: transform 0.2s ease;
+  }
+  .hub:hover { transform: translate(-50%, -50%) scale(1.08); }
+  .hub:active { transform: translate(-50%, -50%) scale(0.95); }
+
+  /* Result panel */
+  .result-panel {
+    background: linear-gradient(135deg, rgba(26,10,10,0.95), rgba(45,21,21,0.95));
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 16px;
+    padding: 20px 28px;
+    width: 340px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.4s ease;
+  }
+  .result-panel::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+  .result-panel::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(201,168,76,0.4), transparent);
+  }
+  .result-label {
+    font-size: 10px;
+    letter-spacing: 5px;
+    color: var(--gold);
+    font-family: 'Noto Sans TC', sans-serif;
+    font-weight: 300;
+    margin-bottom: 8px;
+  }
+  .result-text {
+    font-size: 18px;
+    color: var(--cream);
+    font-weight: 700;
+    line-height: 1.5;
+    transition: all 0.3s ease;
+  }
+  .result-text.placeholder {
+    color: rgba(253,246,236,0.3);
+    font-weight: 400;
+    font-size: 14px;
+    letter-spacing: 1px;
+    font-family: 'Noto Sans TC', sans-serif;
+  }
+  .result-glow {
+    position: absolute;
+    inset: 0;
+    border-radius: 16px;
+    opacity: 0;
+    background: radial-gradient(ellipse at center, rgba(192,39,45,0.15), transparent 70%);
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+  }
+  .result-panel.revealed .result-glow { opacity: 1; }
+
+  /* Spin button */
+  .spin-btn {
+    position: relative;
+    background: linear-gradient(135deg, var(--red), var(--dark-red));
+    color: var(--cream);
+    border: none;
+    border-radius: 50px;
+    padding: 14px 44px;
+    font-size: 16px;
+    font-family: 'Noto Serif TC', serif;
+    font-weight: 700;
+    letter-spacing: 3px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow:
+      0 4px 20px rgba(192,39,45,0.4),
+      0 1px 0 rgba(255,255,255,0.1) inset,
+      0 -1px 0 rgba(0,0,0,0.3) inset;
+    overflow: hidden;
+  }
+  .spin-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: -100%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.12), transparent);
+    transition: left 0.5s ease;
+  }
+  .spin-btn:hover::before { left: 160%; }
+  .spin-btn:hover {
+    transform: translateY(-2px);
+    box-shadow:
+      0 8px 30px rgba(192,39,45,0.5),
+      0 1px 0 rgba(255,255,255,0.1) inset;
+  }
+  .spin-btn:active { transform: translateY(0); }
+  .spin-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  /* Corner deco */
+  .corner-deco {
+    position: fixed;
+    width: 80px;
+    height: 80px;
+    opacity: 0.15;
+  }
+  .corner-deco.tl { top: 16px; left: 16px; }
+  .corner-deco.tr { top: 16px; right: 16px; transform: scaleX(-1); }
+  .corner-deco.bl { bottom: 16px; left: 16px; transform: scaleY(-1); }
+  .corner-deco.br { bottom: 16px; right: 16px; transform: scale(-1); }
+
+  /* Confetti burst */
+  .confetti-wrap {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 100;
+    overflow: hidden;
+  }
+  .confetti-piece {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    opacity: 0;
+    animation: confettiFall 1.8s ease-out forwards;
+  }
+  @keyframes confettiFall {
+    0% { transform: translateY(-20px) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* Tick audio visual */
+  .tick-flash {
+    position: absolute;
+    inset: -12px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    opacity: 0;
+    animation: none;
+  }
+  .tick-flash.pop {
+    animation: tickPop 0.15s ease-out forwards;
+  }
+  @keyframes tickPop {
+    0% { opacity: 0.8; transform: scale(1); }
+    100% { opacity: 0; transform: scale(1.08); }
+  }
+</style>
+</head>
+<body>
+
+<!-- Corner decorations -->
+<svg class="corner-deco tl" viewBox="0 0 80 80" fill="none">
+  <path d="M0 80 L0 0 L80 0" stroke="#c9a84c" stroke-width="2" fill="none"/>
+  <path d="M8 72 L8 8 L72 8" stroke="#c9a84c" stroke-width="1" fill="none"/>
+  <circle cx="8" cy="8" r="3" fill="#c9a84c"/>
+</svg>
+<svg class="corner-deco tr" viewBox="0 0 80 80" fill="none">
+  <path d="M0 80 L0 0 L80 0" stroke="#c9a84c" stroke-width="2" fill="none"/>
+  <path d="M8 72 L8 8 L72 8" stroke="#c9a84c" stroke-width="1" fill="none"/>
+  <circle cx="8" cy="8" r="3" fill="#c9a84c"/>
+</svg>
+<svg class="corner-deco bl" viewBox="0 0 80 80" fill="none">
+  <path d="M0 80 L0 0 L80 0" stroke="#c9a84c" stroke-width="2" fill="none"/>
+  <path d="M8 72 L8 8 L72 8" stroke="#c9a84c" stroke-width="1" fill="none"/>
+  <circle cx="8" cy="8" r="3" fill="#c9a84c"/>
+</svg>
+<svg class="corner-deco br" viewBox="0 0 80 80" fill="none">
+  <path d="M0 80 L0 0 L80 0" stroke="#c9a84c" stroke-width="2" fill="none"/>
+  <path d="M8 72 L8 8 L72 8" stroke="#c9a84c" stroke-width="1" fill="none"/>
+  <circle cx="8" cy="8" r="3" fill="#c9a84c"/>
+</svg>
+
+<div class="confetti-wrap" id="confetti"></div>
+
+<div class="container">
+  <div class="title-block">
+    <div class="title-cn">DING TAI FUNG ROULETTE</div>
+    <div class="title-main">今天<span>鼎泰豐</span>吃什麼？</div>
+    <div class="title-deco"><span class="title-deco-inner">命運自有安排</span></div>
+  </div>
+
+  <div class="wheel-wrapper">
+    <div class="ring-outer"></div>
+    <div class="tick-flash" id="tickFlash"></div>
+    <canvas id="wheel" width="340" height="340"></canvas>
+    <div class="pointer">
+      <svg viewBox="0 0 32 36" fill="none">
+        <polygon points="16,36 0,4 32,4" fill="#c9a84c"/>
+        <polygon points="16,28 6,8 26,8" fill="#8b1a1a"/>
+        <circle cx="16" cy="6" r="4" fill="#c9a84c"/>
+      </svg>
+    </div>
+    <div class="hub" id="hub" onclick="spin()">🥟</div>
+  </div>
+
+  <div class="result-panel" id="resultPanel">
+    <div class="result-glow"></div>
+    <div class="result-text placeholder" id="resultText">轉動轉盤，讓命運決定午餐</div>
+  </div>
+
+  <button class="spin-btn" id="spinBtn" onclick="spin()">旋 轉</button>
+</div>
+
+<script>
+const dishes = [
+  "小籠包\n元盅雞湯",
+  "排骨蛋炒飯\n辣味黃瓜",
+  "蝦肉紅油抄手\n擔擔麵",
+  "絲瓜蝦仁小籠包\n乾煸四季豆",
+  "紅燒牛肉麵\n紅燒茄子",
+  "巧克力小籠包\n柳橙汁",
+  "什蔬蛋炒飯\n菜肉蒸餃",
+  "炸排骨\n蝦肉紅油燃麵"
+];
+
+const COLORS = [
+  ['#8b1a1a', '#c0272d'],
+  ['#7a2800', '#b84200'],
+  ['#8b1a1a', '#c0272d'],
+  ['#6b2b00', '#a04010'],
+  ['#8b1a1a', '#c0272d'],
+  ['#5a2200', '#8b3800'],
+  ['#8b1a1a', '#c0272d'],
+  ['#7a2800', '#b84200'],
+];
+
+const GOLD = '#c9a84c';
+const CREAM = '#fdf6ec';
+const n = dishes.length;
+const arc = (2 * Math.PI) / n;
+
+let currentAngle = 0;
+let spinning = false;
+let animFrame;
+
+const canvas = document.getElementById('wheel');
+const ctx = canvas.getContext('2d');
+const cx = canvas.width / 2;
+const cy = canvas.height / 2;
+const radius = cx - 6;
+
+function drawWheel(angle) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  for (let i = 0; i < n; i++) {
+    const start = angle + i * arc;
+    const end = start + arc;
+    const mid = start + arc / 2;
+
+    // Segment fill
+    const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, radius);
+    grad.addColorStop(0, COLORS[i][0]);
+    grad.addColorStop(1, COLORS[i][1]);
+
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.arc(cx, cy, radius, start, end);
+    ctx.closePath();
+    ctx.fillStyle = grad;
+    ctx.fill();
+
+    // Gold divider lines
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + radius * Math.cos(start), cy + radius * Math.sin(start));
+    ctx.strokeStyle = 'rgba(201,168,76,0.6)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    // Outer arc ring
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius - 18, start, end);
+    ctx.strokeStyle = 'rgba(201,168,76,0.25)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    // Text
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(mid);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    const lines = dishes[i].split('\n');
+    const textX = radius * 0.62;
+
+    if (lines.length === 2) {
+      ctx.font = 'bold 13px "Noto Serif TC", serif';
+      ctx.fillStyle = GOLD;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(lines[0], textX, -9);
+      ctx.font = '11px "Noto Sans TC", sans-serif';
+      ctx.fillStyle = 'rgba(253,246,236,0.8)';
+      ctx.fillText(lines[1], textX, 7);
+    } else {
+      ctx.font = 'bold 13px "Noto Serif TC", serif';
+      ctx.fillStyle = GOLD;
+      ctx.shadowColor = 'rgba(0,0,0,0.5)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(lines[0], textX, 0);
+    }
+    ctx.restore();
+  }
+
+  // Outer border ring
+  ctx.beginPath();
+  ctx.arc(cx, cy, radius, 0, 2 * Math.PI);
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 3;
+  ctx.stroke();
+
+  // Inner circle border
+  ctx.beginPath();
+  ctx.arc(cx, cy, 30, 0, 2 * Math.PI);
+  ctx.strokeStyle = 'rgba(201,168,76,0.4)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Tick marks around edge
+  for (let i = 0; i < 32; i++) {
+    const a = angle + (i / 32) * 2 * Math.PI;
+    const isMain = i % 4 === 0;
+    const inner = radius - (isMain ? 14 : 8);
+    ctx.beginPath();
+    ctx.moveTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+    ctx.lineTo(cx + inner * Math.cos(a), cy + inner * Math.sin(a));
+    ctx.strokeStyle = isMain ? 'rgba(201,168,76,0.7)' : 'rgba(201,168,76,0.3)';
+    ctx.lineWidth = isMain ? 2 : 1;
+    ctx.stroke();
+  }
+}
+
+drawWheel(currentAngle);
+
+let lastSector = -1;
+let totalRotation = 0;
+
+function spin() {
+  if (spinning) return;
+  spinning = true;
+
+  const btn = document.getElementById('spinBtn');
+  const hub = document.getElementById('hub');
+  btn.disabled = true;
+  btn.textContent = '旋 轉 中...';
+  hub.textContent = '✨';
+
+  const resultPanel = document.getElementById('resultPanel');
+  const resultText = document.getElementById('resultText');
+  resultPanel.classList.remove('revealed');
+  resultText.className = 'result-text placeholder';
+  resultText.textContent = '轉動中...';
+
+  // Random spin: 5-10 full rotations + random offset
+  const extraRotations = (5 + Math.random() * 5) * 2 * Math.PI;
+  const targetAngle = currentAngle + extraRotations;
+  const duration = 4000 + Math.random() * 1500;
+  const startAngle = currentAngle;
+  const startTime = performance.now();
+
+  // Easing: fast start, slow end
+  function easeOut(t) {
+    return 1 - Math.pow(1 - t, 4);
+  }
+
+  function animate(now) {
+    const elapsed = now - startTime;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = easeOut(progress);
+
+    currentAngle = startAngle + (targetAngle - startAngle) * eased;
+    drawWheel(currentAngle);
+
+    // Tick detection
+    const normalizedAngle = ((currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+    const pointerAngle = (Math.PI * 1.5 - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
+    const sector = Math.floor(pointerAngle / arc) % n;
+    if (sector !== lastSector) {
+      lastSector = sector;
+      tickEffect();
+    }
+
+    if (progress < 1) {
+      animFrame = requestAnimationFrame(animate);
+    } else {
+      currentAngle = targetAngle;
+      drawWheel(currentAngle);
+      onSpinComplete();
+    }
+  }
+
+  requestAnimationFrame(animate);
+}
+
+function tickEffect() {
+  const tf = document.getElementById('tickFlash');
+  tf.classList.remove('pop');
+  void tf.offsetWidth;
+  tf.classList.add('pop');
+}
+
+function onSpinComplete() {
+  spinning = false;
+
+  // Determine which dish the pointer points to
+  const normalizedAngle = ((currentAngle % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const pointerAngle = (Math.PI * 1.5 - normalizedAngle + 2 * Math.PI) % (2 * Math.PI);
+  const sector = Math.floor(pointerAngle / arc) % n;
+  const dish = dishes[sector];
+
+  const btn = document.getElementById('spinBtn');
+  const hub = document.getElementById('hub');
+  const resultPanel = document.getElementById('resultPanel');
+  const resultText = document.getElementById('resultText');
+
+  btn.disabled = false;
+  btn.textContent = '再 旋 轉';
+  hub.textContent = '🥟';
+
+  // Animate result reveal
+  setTimeout(() => {
+    resultPanel.classList.add('revealed');
+    resultText.className = 'result-text';
+    const lines = dish.split('\n');
+    resultText.innerHTML = lines.length === 2
+      ? `<div style="color:var(--gold);font-size:11px;letter-spacing:4px;margin-bottom:6px;font-family:'Noto Sans TC',sans-serif;font-weight:300">✦ 今日命運推薦 ✦</div><div>${lines[0]}</div><div style="font-size:14px;color:rgba(253,246,236,0.65);font-weight:300;margin-top:4px;font-family:'Noto Sans TC',sans-serif">${lines[1]}</div>`
+      : `<div style="color:var(--gold);font-size:11px;letter-spacing:4px;margin-bottom:6px;font-family:'Noto Sans TC',sans-serif;font-weight:300">✦ 今日命運推薦 ✦</div>${lines[0]}`;
+    burst();
+  }, 200);
+}
+
+function burst() {
+  const wrap = document.getElementById('confetti');
+  wrap.innerHTML = '';
+  const colors = ['#c9a84c', '#c0272d', '#fdf6ec', '#e8d5a3', '#ff6b6b'];
+  for (let i = 0; i < 30; i++) {
+    const el = document.createElement('div');
+    el.className = 'confetti-piece';
+    const x = 30 + Math.random() * 40;
+    el.style.cssText = `
+      left: ${x}%;
+      top: ${20 + Math.random() * 20}%;
+      background: ${colors[Math.floor(Math.random() * colors.length)]};
+      border-radius: ${Math.random() > 0.5 ? '50%' : '2px'};
+      width: ${4 + Math.random() * 8}px;
+      height: ${4 + Math.random() * 8}px;
+      animation-delay: ${Math.random() * 0.4}s;
+      animation-duration: ${1.4 + Math.random() * 0.8}s;
+    `;
+    wrap.appendChild(el);
+  }
+  setTimeout(() => { wrap.innerHTML = ''; }, 2500);
+}
+</script>
+</body>
+</html>
