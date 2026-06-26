@@ -446,7 +446,33 @@ function initAudio() {
     masterGain.connect(comp).connect(audioCtx.destination);
   }
   if (audioCtx.state === 'suspended') audioCtx.resume();
+  unlockIOSAudio();
 }
+
+// iOS Safari 需要在使用者互動時播放一段無聲音來「解鎖」音訊系統
+let iosUnlocked = false;
+function unlockIOSAudio() {
+  if (iosUnlocked || !audioCtx) return;
+  // 播放一個極短的無聲緩衝，喚醒 iOS 音訊
+  const buffer = audioCtx.createBuffer(1, 1, 22050);
+  const src = audioCtx.createBufferSource();
+  src.buffer = buffer;
+  src.connect(audioCtx.destination);
+  src.start(0);
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  iosUnlocked = true;
+}
+
+// 任何一次碰觸/點擊都先嘗試解鎖音訊（涵蓋 iOS 嚴格規定）
+function primeAudioOnFirstTouch() {
+  initAudio();
+  document.removeEventListener('touchstart', primeAudioOnFirstTouch);
+  document.removeEventListener('touchend', primeAudioOnFirstTouch);
+  document.removeEventListener('click', primeAudioOnFirstTouch);
+}
+document.addEventListener('touchstart', primeAudioOnFirstTouch, { passive: true });
+document.addEventListener('touchend', primeAudioOnFirstTouch, { passive: true });
+document.addEventListener('click', primeAudioOnFirstTouch);
 
 function out() { return masterGain || audioCtx.destination; }
 
@@ -739,9 +765,14 @@ buildLights();
 
 function spinAll() {
   if (isSpinning) return;
-  initAudio();          // 首次點擊啟動音訊（瀏覽器要求）
-  sndLeverPull();       // 拉霸啟動聲
-  startReelLoop();      // 滾輪滴答聲
+  initAudio();          // 啟動/喚醒音訊（含 iOS 解鎖）
+  // iOS 的 resume() 為非同步，確保音訊就緒後再發聲
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume().then(() => { sndLeverPull(); startReelLoop(); });
+  } else {
+    sndLeverPull();     // 拉霸啟動聲
+    startReelLoop();    // 滾輪滴答聲
+  }
   isSpinning = true;
   spinCount++;
   document.getElementById('spinCount').textContent = String(spinCount).padStart(2,'0');
